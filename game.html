@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            text-align: center;
+            margin: 0;
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            color: #fff;
+        }
+        h1 {
+            font-size: 2em;
+            margin-top: 20px;
+            text-shadow: 3px 3px #000;
+        }
+        canvas {
+            display: block;
+            margin: 20px auto;
+            border: 4px dashed #ffff00;
+            border-radius: 10px;
+        }
+        #info {
+            display: none;
+            margin-top: 20px;
+            text-align: left;
+            font-size: 1.2em;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+        }
+        #gameOverMessage {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.9);
+            border: 2px dashed #ffff00;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 10;
+        }
+        #gameOverMessage button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 1em;
+            background-color: #ff00ff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #gameOverMessage button:hover {
+            background-color: #00ffff;
+        }
+    </style>
+</head>
+<body>
+    <h1>Faça 375 pontos para desbloquear mais informações, será que você consegue?</h1>
+    <canvas id="gameCanvas" width="400" height="200"></canvas>
+    <div id="info">
+        <h2>Informações secretas:</h2>
+        <p><strong>Endereço:</strong> Ladeira Alexandre Leonel, 221 - São Mateus, Juiz de Fora</p>
+        <p><strong>Horário:</strong> 18:00</p>
+        <p><strong>Traje:</strong> Venha como sempre: linda e com fome.</p>
+        <p><strong>Observação 1:</strong> Caso seja necessário alterar a data ou hora, favor comunicar.</p>
+        <p><strong>Observação 2:</strong> Se for beber, não dirija. Sua carona da volta já estará garantida.</p>
+    </div>
+    <div id="gameOverMessage">
+        <h2>Você perdeu! Tente novamente.</h2>
+        <button onclick="restartGame()">Recomeçar</button>
+    </div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let heart, obstacles, score, gameInterval;
+        const gravity = 1.5;
+        const jumpStrength = -15;
+
+        function resetGame() {
+            heart = { x: 50, y: 150, vy: 0, onGround: true };
+            obstacles = [];
+            score = 0;
+            document.getElementById('gameOverMessage').style.display = 'none';
+            document.getElementById('info').style.display = 'none';
+            gameInterval = setInterval(updateGame, 30);
+        }
+
+        function drawHeart() {
+            ctx.fillStyle = 'red';
+            ctx.beginPath();
+            ctx.moveTo(heart.x + 10, heart.y);
+            ctx.bezierCurveTo(heart.x, heart.y - 15, heart.x - 20, heart.y + 10, heart.x + 10, heart.y + 30);
+            ctx.bezierCurveTo(heart.x + 40, heart.y + 10, heart.x + 20, heart.y - 15, heart.x + 10, heart.y);
+            ctx.fill();
+        }
+
+        function drawObstacles() {
+            ctx.fillStyle = 'black';
+            for (const obs of obstacles) {
+                ctx.beginPath();
+                ctx.moveTo(obs.x, obs.y);
+                ctx.lineTo(obs.x - 10, obs.y + 10);
+                ctx.lineTo(obs.x + 10, obs.y + 10);
+                ctx.closePath();
+                ctx.fill();
+            }
+        }
+
+        function updateGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (!heart.onGround) {
+                heart.vy += gravity;
+                heart.y += heart.vy;
+                if (heart.y >= 150) {
+                    heart.y = 150;
+                    heart.vy = 0;
+                    heart.onGround = true;
+                }
+            }
+
+            for (const obs of obstacles) {
+                obs.x -= 5;
+            }
+            if (obstacles.length && obstacles[0].x < -20) obstacles.shift();
+
+            if (Math.random() < 0.02) {
+                obstacles.push({ x: 400, y: 150 });
+            }
+
+            for (const obs of obstacles) {
+                if (heart.x < obs.x + 10 && heart.x + 20 > obs.x && heart.y < obs.y + 10 && heart.y + 20 > obs.y) {
+                    clearInterval(gameInterval);
+                    document.getElementById('gameOverMessage').style.display = 'block';
+                    return;
+                }
+            }
+
+            score++;
+            ctx.fillStyle = 'black';
+            ctx.fillText(`Pontuação: ${score}`, 10, 20);
+
+            drawHeart();
+            drawObstacles();
+
+            if (score >= 375) {
+                clearInterval(gameInterval);
+                document.getElementById('info').style.display = 'block';
+            }
+        }
+
+        function restartGame() {
+            resetGame();
+        }
+
+        canvas.addEventListener('click', () => {
+            if (heart.onGround) {
+                heart.vy = jumpStrength;
+                heart.onGround = false;
+            }
+        });
+
+        resetGame();
+    </script>
+</body>
+</html>
+
